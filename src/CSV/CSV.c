@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -25,7 +25,8 @@ void countColumnsAndRows(const char* inp, int* rows, int* columns)
     fclose(file);
 }
 
-void makeArray(const char* inp, int* rows, int* columns) {
+void makeArray(const char* inp, int* rows, int* columns)
+{
     return;
 }
 
