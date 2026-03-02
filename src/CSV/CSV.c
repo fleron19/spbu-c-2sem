@@ -30,14 +30,14 @@ int* makeArrayOfWidth(const char* inp, int rows, int columns)
     int* width = (int*)calloc(columns, sizeof(int));
 
     char buffer[1024];
-    FILE *stream = fopen(inp, "r");
+    FILE* stream = fopen(inp, "r");
 
-    for (int i = 0; i < rows; i++){ 
+    for (int i = 0; i < rows; i++) {
         fgets(buffer, 1024, stream);
         buffer[strcspn(buffer, "\n")] = 0;
-        char *token = strtok(buffer, ",");
+        char* token = strtok(buffer, ",");
         width[0] = (strlen(token) > width[0]) ? strlen(token) : width[0];
-        for (int j = 1; j < columns; j++){
+        for (int j = 1; j < columns; j++) {
             printf("%s\n", token);
             token = strtok(NULL, ",");
             width[j] = (strlen(token) > width[j]) ? strlen(token) : width[j];
@@ -57,14 +57,14 @@ bool prettyPrinter(const char* inp, const char* out)
     int columnsNum = 0;
     int rowsNum = 0;
     countColumnsAndRows(inp, &rowsNum, &columnsNum);
-    
-    int * width = makeArrayOfWidth(inp, rowsNum, columnsNum);
+
+    int* width = makeArrayOfWidth(inp, rowsNum, columnsNum);
 
     printf("%d columns\n", columnsNum);
     printf("%d rows\n", rowsNum);
-    
-    for (int i = 0; i < columnsNum; i ++) {
-       printf("%d ", width[i]);
+
+    for (int i = 0; i < columnsNum; i++) {
+        printf("%d ", width[i]);
     }
     printf("\n");
     return true;
