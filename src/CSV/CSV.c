@@ -52,7 +52,7 @@ void printRow(FILE* out, char* buffer, int* widths, int columns, bool heading)
     for (int j = 0; j < columns; j++) {
         endp = NULL;
         double res = strtod(token, &endp);
-        if ((*endp != 0 && res == 0.0)|| heading) {
+        if ((*endp != 0 && res == 0.0) || heading) {
             fprintf(out, "%s", token);
             for (int q = 0; q < (int)(widths[j] - strlen(token)) + 1; q++) {
                 fprintf(out, " ");
