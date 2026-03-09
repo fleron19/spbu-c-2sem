@@ -13,8 +13,8 @@ bool compareTxtFiles(const char* fi, const char* se)
     FILE* f2 = fopen(se, "r");
     if (f1 == NULL || f2 == NULL)
         return false;
-    char ch1;
-    char ch2;
+    int ch1;
+    int ch2;
 
     while ((ch1 = getc(f1)) != EOF && (ch2 = getc(f2)) != EOF) {
         if (ch1 != ch2) {

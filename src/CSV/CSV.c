@@ -26,7 +26,10 @@ static void countColumnsAndRows(const char* inp, int* rows, int* columns)
 
 static int* makeArrayOfWidth(const char* inp, int rows, int columns)
 {
-    int* width = (int*)calloc(columns, sizeof(int));
+    int* width = NULL;
+    if (columns) {
+        width = (int*)calloc(columns, sizeof(int));
+    }
 
     char buffer[1024];
     FILE* stream = fopen(inp, "r");
