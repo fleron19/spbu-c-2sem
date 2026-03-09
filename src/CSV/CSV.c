@@ -5,7 +5,7 @@
 
 #include "CSV.h"
 
-void countColumnsAndRows(const char* inp, int* rows, int* columns)
+static void countColumnsAndRows(const char* inp, int* rows, int* columns)
 {
     FILE* file = fopen(inp, "r");
     char buf[1024];
@@ -24,7 +24,7 @@ void countColumnsAndRows(const char* inp, int* rows, int* columns)
     fclose(file);
 }
 
-int* makeArrayOfWidth(const char* inp, int rows, int columns)
+static int* makeArrayOfWidth(const char* inp, int rows, int columns)
 {
     int* width = (int*)calloc(columns, sizeof(int));
 
@@ -44,7 +44,7 @@ int* makeArrayOfWidth(const char* inp, int rows, int columns)
     fclose(stream);
     return width;
 }
-void printRow(FILE* out, char* buffer, int* widths, int columns, bool heading)
+static void printRow(FILE* out, char* buffer, const int* widths, int columns, bool heading)
 {
     fprintf(out, "| ");
     char* endp = NULL;
@@ -54,16 +54,16 @@ void printRow(FILE* out, char* buffer, int* widths, int columns, bool heading)
         double res = strtod(token, &endp);
         if ((*endp != 0 && res == 0.0) || heading) {
             fprintf(out, "%s", token);
-            for (int q = 0; q < (int)(widths[j] - strlen(token)) + 1; q++) {
+            for (int q = 0; q < (int)(widths[j] - strlen(token)); q++) {
                 fprintf(out, " ");
             }
         } else {
-            for (int q = 0; q < (int)(widths[j] - strlen(token)) + 1; q++) {
+            for (int q = 0; q < (int)(widths[j] - strlen(token)); q++) {
                 fprintf(out, " ");
             }
             fprintf(out, "%s", token);
         }
-        fprintf(out, "|");
+        fprintf(out, " |");
         if (j != columns - 1) {
             fprintf(out, " ");
         }
@@ -82,7 +82,7 @@ void printRow(FILE* out, char* buffer, int* widths, int columns, bool heading)
     }
     fprintf(out, "+\n");
 }
-void printRows(const char* inp, const char* out, int* widths, int rows, int columns)
+static void printRows(const char* inp, const char* out, int* widths, int rows, int columns)
 {
     FILE* input = fopen(inp, "r");
     FILE* output = fopen(out, "w");
@@ -93,7 +93,9 @@ void printRows(const char* inp, const char* out, int* widths, int rows, int colu
             fprintf(output, "=");
         }
     }
-    fprintf(output, "+\n");
+    if (rows != 0 && columns != 0) {
+        fprintf(output, "+\n");
+    };
 
     char buffer[1024];
     for (int i = 0; i < rows; i++) {
@@ -115,7 +117,6 @@ bool prettyPrinter(const char* inp, const char* out)
     FILE* input = fopen(inp, "r");
     if (input == NULL) {
         return false;
-        printf("%s not found\n", inp);
     }
     fclose(input);
     int columnsNum = 0;
@@ -125,20 +126,6 @@ bool prettyPrinter(const char* inp, const char* out)
     int* width = makeArrayOfWidth(inp, rowsNum, columnsNum);
     printRows(inp, out, width, rowsNum, columnsNum);
 
-    printf("%d columns\n", columnsNum);
-    printf("%d rows\n", rowsNum);
-
-    for (int i = 0; i < columnsNum; i++) {
-        printf("%d ", width[i]);
-    }
-    printf("\n");
-
     free(width);
     return true;
-}
-
-int main()
-{
-    prettyPrinter("input1.csv", "output.txt");
-    return 0;
 }
