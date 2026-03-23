@@ -1,5 +1,5 @@
 #include "AVLTree.h"
-
+#include "stack.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
             return;
         }
         tree->size++;
-        strncpy(node->shortName, sh, 3);
+        strncpy(node->shortName, sh, 4);
         strncpy(node->fullName, fl, 256);
         node->leftChild = NULL;
         node->rightChild = NULL;
@@ -47,7 +47,7 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
                     return;
                 }
                 tree->size++;
-                strncpy(node->shortName, sh, 3);
+                strncpy(node->shortName, sh, 4);
                 strncpy(node->fullName, fl, 256);
                 curr->rightChild = node;
                 node->leftChild = NULL;
@@ -64,7 +64,7 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
                     return;
                 }
                 tree->size++;
-                strncpy(node->shortName, sh, 3);
+                strncpy(node->shortName, sh, 4);
                 strncpy(node->fullName, fl, 256);
                 curr->leftChild = node;
                 node->leftChild = NULL;
@@ -84,7 +84,7 @@ const char* avlFind(AVL* tree, const char sh[])
     } else {
         Node* curr = tree->root;
         while (true) {
-            //printf("%s\n", curr->shortName);
+            // printf("%s\n", curr->shortName);
             if (strcmp(sh, curr->shortName) == 0) {
                 return curr->fullName;
             }
@@ -147,7 +147,7 @@ void avlDelete(AVL* tree, const char sh[])
             successorParent = successor;
             successor = successor->leftChild;
         }
-        strncpy(current->shortName, successor->shortName, 3);
+        strncpy(current->shortName, successor->shortName, 4);
         strncpy(current->fullName, successor->fullName, 256);
         current = successor;
         parent = successorParent;
@@ -170,4 +170,53 @@ void avlDelete(AVL* tree, const char sh[])
     }
     free(current);
     tree->size--;
+}
+
+Iterator* iteratorInit(AVL* tree)
+{
+    Iterator* it = (Iterator*)malloc(sizeof(Iterator));
+    int filled = 0;
+    it->currIdx = 0;
+    it->size = tree->size;
+    it->values = (Node**)calloc(it->size, sizeof(Node*));
+    if (it->values == NULL) {
+        printf("Allocation error\n");
+        return it;
+    }
+
+    Node* curr = tree->root;
+    Stack* stack = newStack();
+    while (curr != NULL || !isEmpty(stack)) {
+        while (curr != NULL) {
+            push(stack, curr);
+            curr = curr->leftChild;
+        }
+        curr = (Node*)pop(stack);
+        it->values[filled] = curr;
+        filled++;
+        curr = curr->rightChild;
+    }
+
+    deleteStack(stack);
+    return it;
+}
+
+bool iteratorHasNext(Iterator* it)
+{
+    return it->currIdx < it->size;
+}
+
+Node* iteratorNext(Iterator* it)
+{
+    if (!iteratorHasNext(it))
+        return NULL;
+    Node* res = it->values[it->currIdx];
+    it->currIdx++;
+    return res;
+}
+
+void iteratorFree(Iterator* it)
+{
+    free(it->values);
+    free(it);
 }
