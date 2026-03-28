@@ -10,7 +10,7 @@ void save(AVL* tree, char* filename) {
     int cnt = 0;
     FILE* out = fopen(filename, "w");
     if (out == NULL) {
-        printf("Ошибка - файл %s не найден\n", filename);
+        printf(RED("Ошибка - файл %s не найден\n"), filename);
         return;
     }
     while (iteratorHasNext(it)) {
@@ -19,6 +19,8 @@ void save(AVL* tree, char* filename) {
         fprintf(out, "%s:%s\n", curr->shortName, curr->fullName);
     }
     iteratorFree(it);
+    fflush(out);
+    fclose(out);
     printf("База сохранена: %d аэропортов.\n", cnt);
 }
 
@@ -28,7 +30,7 @@ void find(AVL* tree, char* arg) {
         printf("%s → %s\n", arg, res);
     }
     else {
-        printf("Аэропорт с кодом '%s' не найден в базе.\n", arg);
+        printf(RED("Аэропорт с кодом '%s' не найден в базе.\n"), arg);
     }
 }
 
@@ -80,7 +82,7 @@ int main(int argc, char** argv)
         if (strcmp(inp, "quit\n") == 0) {
             end = true;
         } else if (strcmp(inp, "save\n") == 0) {
-            save(avl, "airports.txt");
+            save(avl, argv[1]);
         } else {
             char* com = strtok(inp, " ");
             if (strcmp(com, "find") == 0) {

@@ -5,6 +5,7 @@
 struct Node {
     char shortName[4];
     char fullName[256];
+    int balanceFactor;
     struct Node* leftChild;
     struct Node* rightChild;
 };
