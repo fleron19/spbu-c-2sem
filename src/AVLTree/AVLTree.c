@@ -1,11 +1,122 @@
 #include "AVLTree.h"
 #include "stack.h"
+#include "tests.h"
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define USE_ROTATIONS true // initilization with rotations is 15 times faster than without!!!
+
+static Node* rotateRight(Node* n)
+{
+    Node* c = n->leftChild;
+    Node* gc = c->rightChild;
+
+    c->rightChild = n;
+    n->leftChild = gc;
+
+    if (c->balanceFactor == 1) {
+        n->balanceFactor = 0;
+        c->balanceFactor = 0;
+    } else {
+        n->balanceFactor = 1;
+        c->balanceFactor = -1;
+    }
+
+    return c;
+}
+
+static Node* rotateLeft(Node* n)
+{
+    Node* c = n->rightChild;
+    Node* gc = c->leftChild;
+
+    c->leftChild = n;
+    n->rightChild = gc;
+
+    if (c->balanceFactor == -1) {
+        n->balanceFactor = 0;
+        c->balanceFactor = 0;
+    } else {
+        n->balanceFactor = -1;
+        c->balanceFactor = 1;
+    }
+
+    return c;
+}
+
+static Node* rotateLeftRight(Node* n)
+{
+    Node* c = n->leftChild;
+    Node* gc = c->rightChild;
+
+    if (gc->balanceFactor == 1) {
+        n->balanceFactor = -1;
+        c->balanceFactor = 0;
+    } else if (gc->balanceFactor == -1) {
+        n->balanceFactor = 0;
+        c->balanceFactor = 1;
+    } else {
+        n->balanceFactor = 0;
+        c->balanceFactor = 0;
+    }
+    gc->balanceFactor = 0;
+
+    c->rightChild = gc->leftChild;
+    gc->leftChild = c;
+    n->leftChild = gc->rightChild;
+    gc->rightChild = n;
+
+    return gc;
+}
+
+static Node* rotateRightLeft(Node* n)
+{
+    Node* c = n->rightChild;
+    Node* gc = c->leftChild;
+
+    if (gc->balanceFactor == 1) {
+        n->balanceFactor = 0;
+        c->balanceFactor = -1;
+    } else if (gc->balanceFactor == -1) {
+        n->balanceFactor = 1;
+        c->balanceFactor = 0;
+    } else {
+        n->balanceFactor = 0;
+        c->balanceFactor = 0;
+    }
+    gc->balanceFactor = 0;
+
+    c->leftChild = gc->rightChild;
+    gc->rightChild = c;
+    n->rightChild = gc->leftChild;
+    gc->leftChild = n;
+
+    return gc;
+}
+
+static Node* rebalance(Node* n)
+{
+    if (USE_ROTATIONS) {
+        if (n->balanceFactor == 2) {
+            if (n->leftChild->balanceFactor == -1) {
+                return rotateLeftRight(n);
+            } else {
+                return rotateRight(n);
+            }
+        } else {
+            if (n->rightChild->balanceFactor == 1) {
+                return rotateRightLeft(n);
+            } else {
+                return rotateLeft(n);
+            }
+        }
+    }
+    return n;
+}
 
 AVL* newAVL(void)
 {
@@ -21,99 +132,84 @@ AVL* newAVL(void)
 
 void avlInsert(AVL* tree, const char sh[], const char fl[])
 {
-    if (tree->root == NULL) {
-        Node* node = (Node*)malloc(sizeof(*node));
-        if (node == NULL) {
-            printf("Allocation error\n");
-            return;
-        }
-        tree->size++;
-        strncpy(node->shortName, sh, 4);
-        strncpy(node->fullName, fl, 256);
-        node->leftChild = NULL;
-        node->rightChild = NULL;
-        tree->root = node;
-        node->balanceFactor = 0;
+    Node* newNode = (Node*)malloc(sizeof(*newNode));
+    if (newNode == NULL) {
+        printf("Allocation error\n");
         return;
     }
+    tree->size++;
+    strncpy(newNode->shortName, sh, 3);
+    newNode->shortName[3] = '\0';
+    strncpy(newNode->fullName, fl, 255);
+    newNode->fullName[255] = '\0';
+    newNode->leftChild = NULL;
+    newNode->rightChild = NULL;
+    newNode->balanceFactor = 0;
+
+    if (tree->root == NULL) {
+        tree->root = newNode;
+        return;
+    }
+
+    PathEntry path[16384];
+    int pathTop = 0;
     Node* curr = tree->root;
-    Node* path[65536] = { NULL };
-    int cnum = 0;
+
     while (true) {
-        if (strcmp(sh, curr->shortName) > 0) {
-            if (curr->rightChild != NULL) {
-                path[cnum] = curr;
-                cnum++;
-                curr = curr->rightChild;
-            } else {
-                Node* node = (Node*)malloc(sizeof(*node));
-                if (node == NULL) {
-                    printf("Allocation error\n");
-                    return;
-                }
-                tree->size++;
-                strncpy(node->shortName, sh, 4);
-                strncpy(node->fullName, fl, 256);
-                curr->rightChild = node;
-                node->leftChild = NULL;
-                node->rightChild = NULL;
-                for (int i = cnum - 1; i >= 0; i--) {
-                    if (curr->rightChild == node) {
-                        curr->balanceFactor--;
-                    } else if (curr->leftChild == node) {
-                        curr->balanceFactor++;
-                    }
-                    if (curr->balanceFactor == 0) {
-                        break;
-                    } else if (curr->balanceFactor == 2) {
-                        // rotate();
-                        if (curr->balanceFactor == 0) {
-                            break;
-                        }
-                    }
-                    node = curr;
-                    curr = path[i];
-                }
+        int cmp = strcmp(sh, curr->shortName);
+        if (cmp == 0) {
+            strncpy(curr->fullName, fl, 255);
+            curr->fullName[255] = '\0';
+            free(newNode);
+            tree->size--;
+            return;
+        }
+
+        if (cmp > 0) {
+            path[pathTop].node = curr;
+            path[pathTop].dir = 1;
+            pathTop++;
+            if (curr->rightChild == NULL) {
+                curr->rightChild = newNode;
                 break;
             }
-        } else if (strcmp(sh, curr->shortName) < 0) {
-            if (curr->leftChild != NULL) {
-                path[cnum] = curr;
-                cnum++;
-                curr = curr->leftChild;
-            } else {
-                Node* node = (Node*)malloc(sizeof(*node));
-                if (node == NULL) {
-                    printf("Allocation error\n");
-                    return;
-                }
-                tree->size++;
-                strncpy(node->shortName, sh, 4);
-                strncpy(node->fullName, fl, 256);
-                curr->leftChild = node;
-                node->leftChild = NULL;
-                node->rightChild = NULL;
-                for (int i = cnum - 1; i >= 0; i--) {
-                    if (curr->rightChild == node) {
-                        curr->balanceFactor--;
-                    } else if (curr->leftChild == node) {
-                        curr->balanceFactor++;
-                    }
-                    if (curr->balanceFactor == 0) {
-                        break;
-                    } else if (curr->balanceFactor == 2) {
-                        // rotate();
-                        if (curr->balanceFactor == 0) {
-                            break;
-                        }
-                    }
-                    node = curr;
-                    curr = path[i];
-                }
-                break;
-            }
+            curr = curr->rightChild;
         } else {
-            strncpy(curr->fullName, fl, 256);
+            path[pathTop].node = curr;
+            path[pathTop].dir = -1;
+            pathTop++;
+            if (curr->leftChild == NULL) {
+                curr->leftChild = newNode;
+                break;
+            }
+            curr = curr->leftChild;
+        }
+    }
+
+    for (int i = pathTop - 1; i >= 0; i--) {
+        Node* parent = path[i].node;
+        if (path[i].dir == -1) {
+            parent->balanceFactor++;
+        } else {
+            parent->balanceFactor--;
+        }
+
+        if (parent->balanceFactor == 0) {
+            break;
+        }
+
+        if (parent->balanceFactor == 2 || parent->balanceFactor == -2) {
+            Node* newRoot = rebalance(parent);
+            if (i == 0) {
+                tree->root = newRoot;
+            } else {
+                Node* grandparent = path[i - 1].node;
+                if (grandparent->leftChild == parent) {
+                    grandparent->leftChild = newRoot;
+                } else {
+                    grandparent->rightChild = newRoot;
+                }
+            }
             break;
         }
     }
@@ -121,40 +217,39 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
 
 const char* avlFind(AVL* tree, const char sh[])
 {
-    if (tree->size == 0) {
+    if (tree->size == 0 || tree->root == NULL) {
         return NULL;
-    } else {
-        Node* curr = tree->root;
-        while (true) {
-            // printf("%s\n", curr->shortName);
-            if (strcmp(sh, curr->shortName) == 0) {
-                return curr->fullName;
-            }
-            if (strcmp(sh, curr->shortName) > 0) {
-                if (curr->rightChild == NULL) {
-                    return NULL;
-                }
-                curr = curr->rightChild;
-            } else {
-                if (curr->leftChild == NULL) {
-                    return NULL;
-                }
-                curr = curr->leftChild;
-            }
+    }
+    Node* curr = tree->root;
+    while (curr != NULL) {
+        if (strcmp(sh, curr->shortName) == 0) {
+            return curr->fullName;
+        }
+        if (strcmp(sh, curr->shortName) > 0) {
+            curr = curr->rightChild;
+        } else {
+            curr = curr->leftChild;
         }
     }
+    return NULL;
 }
 
 static void freeNode(Node* node)
 {
-    if (node == NULL) {
-        return;
+    while (node != NULL) {
+        if (node->leftChild != NULL) {
+            Node* child = node->leftChild;
+            node->leftChild = child->rightChild;
+            free(child);
+        } else if (node->rightChild != NULL) {
+            Node* child = node->rightChild;
+            node->rightChild = child->leftChild;
+            free(child);
+        } else {
+            free(node);
+            return;
+        }
     }
-
-    freeNode(node->leftChild);
-    freeNode(node->rightChild);
-
-    free(node);
 }
 
 void avlFree(AVL* tree)
@@ -217,11 +312,11 @@ static Node* removeRecursive(Node* root, const char sh[], bool* outShrunk, bool*
             return NULL;
         } else if (root->leftChild && root->rightChild) {
             Node* succ = findMin(root->rightChild);
-            // безопасное копирование shortName/fullName
-            memcpy(root->shortName, succ->shortName, sizeof(root->shortName));
-            root->shortName[sizeof(root->shortName) - 1] = '\0';
-            strncpy(root->fullName, succ->fullName, sizeof(root->fullName) - 1);
-            root->fullName[sizeof(root->fullName) - 1] = '\0';
+
+            strncpy(root->shortName, succ->shortName, 3);
+            root->shortName[3] = '\0';
+            strncpy(root->fullName, succ->fullName, 255);
+            root->fullName[255] = '\0';
 
             bool childShrunk = false, childDeleted = false;
             root->rightChild = removeRecursive(root->rightChild, succ->shortName, &childShrunk, &childDeleted);
@@ -255,8 +350,7 @@ static Node* removeRecursive(Node* root, const char sh[], bool* outShrunk, bool*
             *outShrunk = true;
         return root;
     } else if (root->balanceFactor == 2 || root->balanceFactor == -2) {
-        // rotate not implemented per request
-        // root = rotate(root);
+        root = rebalance(root);
         if (root->balanceFactor == 0) {
             if (outShrunk)
                 *outShrunk = true;

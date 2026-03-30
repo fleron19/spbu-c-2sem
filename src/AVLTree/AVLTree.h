@@ -1,7 +1,6 @@
 #pragma once
 #include <stdbool.h>
 
-
 struct Node {
     char shortName[4];
     char fullName[256];
@@ -21,7 +20,12 @@ struct Iterator {
     int currIdx;
 };
 
+struct PathEntry {
+    struct Node* node;
+    int dir;
+};
 
+typedef struct PathEntry PathEntry;
 typedef struct Node Node;
 typedef struct AVL AVL;
 typedef struct Iterator Iterator;
