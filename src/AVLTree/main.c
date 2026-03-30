@@ -104,6 +104,7 @@ int main(int argc, char** argv)
                 char* arg = strtok(NULL, " \n");
                 delete(avl, arg);
             }
+
             if (strcmp(com, "add") == 0) {
                 char* arg = strtok(NULL, "\n");
                 add(avl, arg);
