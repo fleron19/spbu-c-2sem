@@ -37,13 +37,13 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
         return;
     }
     Node* curr = tree->root;
-    Node* path[1024] = { NULL };
+    Node* path[65536] = { NULL };
     int cnum = 0;
     while (true) {
         if (strcmp(sh, curr->shortName) > 0) {
             if (curr->rightChild != NULL) {
                 path[cnum] = curr;
-                cnum ++;
+                cnum++;
                 curr = curr->rightChild;
             } else {
                 Node* node = (Node*)malloc(sizeof(*node));
@@ -57,19 +57,17 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
                 curr->rightChild = node;
                 node->leftChild = NULL;
                 node->rightChild = NULL;
-                for (int i = cnum - 1; i >= 0 ; i --) {
+                for (int i = cnum - 1; i >= 0; i--) {
                     if (curr->rightChild == node) {
                         curr->balanceFactor--;
-                    }
-                    else if (curr->leftChild == node) {
+                    } else if (curr->leftChild == node) {
                         curr->balanceFactor++;
                     }
-                    if (curr -> balanceFactor == 0) {
+                    if (curr->balanceFactor == 0) {
                         break;
-                    }
-                    else if (curr -> balanceFactor == 2) {
-                        //rotate();
-                        if (curr -> balanceFactor == 0) {
+                    } else if (curr->balanceFactor == 2) {
+                        // rotate();
+                        if (curr->balanceFactor == 0) {
                             break;
                         }
                     }
@@ -81,7 +79,7 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
         } else if (strcmp(sh, curr->shortName) < 0) {
             if (curr->leftChild != NULL) {
                 path[cnum] = curr;
-                cnum ++;
+                cnum++;
                 curr = curr->leftChild;
             } else {
                 Node* node = (Node*)malloc(sizeof(*node));
@@ -95,19 +93,17 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
                 curr->leftChild = node;
                 node->leftChild = NULL;
                 node->rightChild = NULL;
-                for (int i = cnum - 1; i >= 0 ; i --) {
+                for (int i = cnum - 1; i >= 0; i--) {
                     if (curr->rightChild == node) {
                         curr->balanceFactor--;
-                    }
-                    else if (curr->leftChild == node) {
+                    } else if (curr->leftChild == node) {
                         curr->balanceFactor++;
                     }
-                    if (curr -> balanceFactor == 0) {
+                    if (curr->balanceFactor == 0) {
                         break;
-                    }
-                    else if (curr -> balanceFactor == 2) {
-                        //rotate();
-                        if (curr -> balanceFactor == 0) {
+                    } else if (curr->balanceFactor == 2) {
+                        // rotate();
+                        if (curr->balanceFactor == 0) {
                             break;
                         }
                     }
@@ -117,6 +113,7 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
                 break;
             }
         } else {
+            strncpy(curr->fullName, fl, 256);
             break;
         }
     }
@@ -166,36 +163,46 @@ void avlFree(AVL* tree)
     free(tree);
 }
 
-static Node* findMin(Node* root) {
-    while (root && root->leftChild) root = root->leftChild;
+static Node* findMin(Node* root)
+{
+    while (root && root->leftChild)
+        root = root->leftChild;
     return root;
 }
 
-static Node* removeRecursive(Node* root, const char sh[], bool *outShrunk, bool *outDeleted) {
+static Node* removeRecursive(Node* root, const char sh[], bool* outShrunk, bool* outDeleted)
+{
     if (!root) {
-        if (outShrunk) *outShrunk = false;
-        if (outDeleted) *outDeleted = false;
+        if (outShrunk)
+            *outShrunk = false;
+        if (outDeleted)
+            *outDeleted = false;
         return NULL;
     }
 
-    if (outDeleted) *outDeleted = false;
+    if (outDeleted)
+        *outDeleted = false;
 
     int cmp = strcmp(sh, root->shortName);
     if (cmp < 0) {
         bool childShrunk = false, childDeleted = false;
         root->leftChild = removeRecursive(root->leftChild, sh, &childShrunk, &childDeleted);
-        if (childDeleted && outDeleted) *outDeleted = true;
+        if (childDeleted && outDeleted)
+            *outDeleted = true;
         if (!childShrunk) {
-            if (outShrunk) *outShrunk = false;
+            if (outShrunk)
+                *outShrunk = false;
             return root;
         }
         root->balanceFactor -= 1;
     } else if (cmp > 0) {
         bool childShrunk = false, childDeleted = false;
         root->rightChild = removeRecursive(root->rightChild, sh, &childShrunk, &childDeleted);
-        if (childDeleted && outDeleted) *outDeleted = true;
+        if (childDeleted && outDeleted)
+            *outDeleted = true;
         if (!childShrunk) {
-            if (outShrunk) *outShrunk = false;
+            if (outShrunk)
+                *outShrunk = false;
             return root;
         }
         root->balanceFactor += 1;
@@ -203,22 +210,26 @@ static Node* removeRecursive(Node* root, const char sh[], bool *outShrunk, bool 
         // найден узел для удаления
         if (!root->leftChild && !root->rightChild) {
             free(root);
-            if (outShrunk) *outShrunk = true;
-            if (outDeleted) *outDeleted = true;
+            if (outShrunk)
+                *outShrunk = true;
+            if (outDeleted)
+                *outDeleted = true;
             return NULL;
         } else if (root->leftChild && root->rightChild) {
             Node* succ = findMin(root->rightChild);
             // безопасное копирование shortName/fullName
             memcpy(root->shortName, succ->shortName, sizeof(root->shortName));
-            root->shortName[sizeof(root->shortName)-1] = '\0';
-            strncpy(root->fullName, succ->fullName, sizeof(root->fullName)-1);
-            root->fullName[sizeof(root->fullName)-1] = '\0';
+            root->shortName[sizeof(root->shortName) - 1] = '\0';
+            strncpy(root->fullName, succ->fullName, sizeof(root->fullName) - 1);
+            root->fullName[sizeof(root->fullName) - 1] = '\0';
 
             bool childShrunk = false, childDeleted = false;
             root->rightChild = removeRecursive(root->rightChild, succ->shortName, &childShrunk, &childDeleted);
-            if (childDeleted && outDeleted) *outDeleted = true;
+            if (childDeleted && outDeleted)
+                *outDeleted = true;
             if (!childShrunk) {
-                if (outShrunk) *outShrunk = false;
+                if (outShrunk)
+                    *outShrunk = false;
                 return root;
             }
             root->balanceFactor += 1;
@@ -227,38 +238,48 @@ static Node* removeRecursive(Node* root, const char sh[], bool *outShrunk, bool 
             Node* tmp = root;
             root = child;
             free(tmp);
-            if (outShrunk) *outShrunk = true;
-            if (outDeleted) *outDeleted = true;
+            if (outShrunk)
+                *outShrunk = true;
+            if (outDeleted)
+                *outDeleted = true;
             return root;
         }
     }
 
     if (root->balanceFactor == 1 || root->balanceFactor == -1) {
-        if (outShrunk) *outShrunk = false;
+        if (outShrunk)
+            *outShrunk = false;
         return root;
     } else if (root->balanceFactor == 0) {
-        if (outShrunk) *outShrunk = true;
+        if (outShrunk)
+            *outShrunk = true;
         return root;
     } else if (root->balanceFactor == 2 || root->balanceFactor == -2) {
         // rotate not implemented per request
         // root = rotate(root);
         if (root->balanceFactor == 0) {
-            if (outShrunk) *outShrunk = true;
+            if (outShrunk)
+                *outShrunk = true;
         } else {
-            if (outShrunk) *outShrunk = false;
+            if (outShrunk)
+                *outShrunk = false;
         }
         return root;
     }
 
-    if (outShrunk) *outShrunk = false;
+    if (outShrunk)
+        *outShrunk = false;
     return root;
 }
 
-void avlDelete(AVL* tree, const char sh[]) {
-    if (tree == NULL || tree->root == NULL) return;
+void avlDelete(AVL* tree, const char sh[])
+{
+    if (tree == NULL || tree->root == NULL)
+        return;
     bool shrunk = false, deleted = false;
     tree->root = removeRecursive(tree->root, sh, &shrunk, &deleted);
-    if (deleted && tree->size > 0) tree->size--;
+    if (deleted && tree->size > 0)
+        tree->size--;
 }
 
 Iterator* iteratorInit(AVL* tree)
