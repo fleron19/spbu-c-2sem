@@ -10,8 +10,8 @@ static void countColumnsAndRows(const char* inp, int* rows, int* columns)
     FILE* file = fopen(inp, "r");
     int rowsloc = 0;
     int columnsloc = 0;
-    char buf[1024];
-    while (fgets(buf, 1024, file)) {
+    char buf[65536];
+    while (fgets(buf, 65536, file)) {
         rowsloc++;
         if (rowsloc == 1) {
             for (int i = 0; buf[i] != '\0'; i++) {
@@ -35,11 +35,11 @@ static int* makeArrayOfWidth(const char* inp, int rows, int columns)
         width = (int*)calloc(columns, sizeof(int));
     }
 
-    char buffer[1024];
+    char buffer[65536];
     FILE* stream = fopen(inp, "r");
 
     for (int i = 0; i < rows; i++) {
-        fgets(buffer, 1024, stream);
+        fgets(buffer, 65536, stream);
         buffer[strcspn(buffer, "\n")] = 0;
         char* token = strtok(buffer, ",");
         for (int j = 0; j < columns; j++) {
@@ -104,9 +104,9 @@ static void printRows(const char* inp, const char* out, int* widths, int rows, i
         fprintf(output, "+\n");
     };
 
-    char buffer[1024];
+    char buffer[65536];
     for (int i = 0; i < rows; i++) {
-        fgets(buffer, 1024, input);
+        fgets(buffer, 65536, input);
         buffer[strcspn(buffer, "\n")] = 0;
         if (i == 0) {
             printRow(output, buffer, widths, columns, true);
