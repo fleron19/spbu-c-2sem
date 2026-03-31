@@ -66,6 +66,6 @@ int main(int argc, char** argv)
         return ret;
     }
     bool res = prettyPrinter("input.csv", "output.txt");
-    printf("%s", res ? "Done\n" : "File not found\n");
+    printf("%s", res ? "Done\n" : "Error\n");
     return 0;
 }

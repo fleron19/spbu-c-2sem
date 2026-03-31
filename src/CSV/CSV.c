@@ -5,67 +5,48 @@
 
 #include "CSV.h"
 
-static void countColumnsAndRows(const char* inp, int* rows, int* columns)
-{
-    FILE* file = fopen(inp, "r");
-    int rowsloc = 0;
-    int columnsloc = 0;
-    char buf[65536];
-    while (fgets(buf, 65536, file)) {
-        rowsloc++;
-        if (rowsloc == 1) {
-            for (int i = 0; buf[i] != '\0'; i++) {
-                if (buf[i] == ',') {
-                    columnsloc++;
-                }
-            }
-            columnsloc++;
-        }
-    }
-
-    *rows = rowsloc;
-    *columns = columnsloc;
-    fclose(file);
-}
-
-static int* makeArrayOfWidth(const char* inp, int rows, int columns)
+static int* makeArrayOfWidth(char** list, size_t rows, size_t columns)
 {
     int* width = NULL;
     if (columns) {
         width = (int*)calloc(columns, sizeof(int));
     }
-
-    char buffer[65536];
-    FILE* stream = fopen(inp, "r");
-
-    for (int i = 0; i < rows; i++) {
-        fgets(buffer, 65536, stream);
-        buffer[strcspn(buffer, "\n")] = 0;
-        char* token = strtok(buffer, ",");
-        for (int j = 0; j < columns; j++) {
+    char* curr = NULL;
+    for (size_t i = 0; i < rows; i++) {
+        curr = strdup(list[i]);
+        if (curr == NULL)
+            continue;
+        char* copy = curr;
+        copy[strcspn(copy, "\n")] = 0;
+        char* token = strtok(copy, ",");
+        for (size_t j = 0; j < columns; j++) {
+            if (token == NULL)
+                break;
             width[j] = ((int)strlen(token) > width[j]) ? (int)strlen(token) : width[j];
             token = strtok(NULL, ",");
         }
+        free(curr);
     }
 
-    fclose(stream);
     return width;
 }
-static void printRow(FILE* out, char* buffer, const int* widths, int columns, bool heading)
+static void printRow(FILE* out, char* buffer, const int* widths, size_t columns, bool heading)
 {
     fprintf(out, "| ");
     char* endp = NULL;
     char* token = strtok(buffer, ",");
-    for (int j = 0; j < columns; j++) {
+    for (size_t j = 0; j < columns; j++) {
+        if (token == NULL)
+            break;
         endp = NULL;
         double res = strtod(token, &endp);
         if ((*endp != 0 && res == 0.0) || heading) {
             fprintf(out, "%s", token);
-            for (int q = 0; q < (int)(widths[j] - strlen(token)); q++) {
+            for (size_t q = 0; q < (size_t)(widths[j] - strlen(token)); q++) {
                 fprintf(out, " ");
             }
         } else {
-            for (int q = 0; q < (int)(widths[j] - strlen(token)); q++) {
+            for (size_t q = 0; q < (size_t)(widths[j] - strlen(token)); q++) {
                 fprintf(out, " ");
             }
             fprintf(out, "%s", token);
@@ -77,9 +58,9 @@ static void printRow(FILE* out, char* buffer, const int* widths, int columns, bo
         token = strtok(NULL, ",");
     }
     fprintf(out, "\n");
-    for (int k = 0; k < columns; k++) {
+    for (size_t k = 0; k < columns; k++) {
         fprintf(out, "+");
-        for (int q = 0; q < widths[k] + 2; q++) {
+        for (size_t q = 0; q < (size_t)(widths[k] + 2); q++) {
             if (heading) {
                 fprintf(out, "=");
             } else {
@@ -89,14 +70,11 @@ static void printRow(FILE* out, char* buffer, const int* widths, int columns, bo
     }
     fprintf(out, "+\n");
 }
-static void printRows(const char* inp, const char* out, int* widths, int rows, int columns)
+static void printRows(char** list, FILE* output, int* widths, size_t rows, size_t columns)
 {
-    FILE* input = fopen(inp, "r");
-    FILE* output = fopen(out, "w");
-
-    for (int k = 0; k < columns; k++) {
+    for (size_t k = 0; k < columns; k++) {
         fprintf(output, "+");
-        for (int q = 0; q < widths[k] + 2; q++) {
+        for (size_t q = 0; q < (size_t)(widths[k] + 2); q++) {
             fprintf(output, "=");
         }
     }
@@ -104,35 +82,91 @@ static void printRows(const char* inp, const char* out, int* widths, int rows, i
         fprintf(output, "+\n");
     };
 
-    char buffer[65536];
-    for (int i = 0; i < rows; i++) {
-        fgets(buffer, 65536, input);
-        buffer[strcspn(buffer, "\n")] = 0;
+    char* curr = NULL;
+    for (size_t i = 0; i < rows; i++) {
+        curr = list[i];
         if (i == 0) {
-            printRow(output, buffer, widths, columns, true);
+            printRow(output, curr, widths, columns, true);
         } else {
-            printRow(output, buffer, widths, columns, false);
+            printRow(output, curr, widths, columns, false);
         }
     }
-
-    fclose(output);
-    fclose(input);
 }
 
 bool prettyPrinter(const char* inp, const char* out)
 {
+
     FILE* input = fopen(inp, "r");
-    if (input == NULL) {
+    FILE* output = fopen(out, "w");
+
+    if (input == NULL || output == NULL) {
+        if (output != NULL) {
+            fclose(output);
+        }
         return false;
     }
+
+    size_t listSize = 1024;
+    size_t rowsNum = 0;
+    size_t columnsNum = 0;
+    char** list = malloc(listSize);
+    char line[8192];
+
+    while (fgets(line, sizeof(line), input)) {
+        list[rowsNum] = malloc(8192 * sizeof(char));
+        if (list[rowsNum] == NULL) {
+            for (size_t i = 0; i < rowsNum; i++) {
+                free(list[i]);
+            }
+            free(list);
+            fclose(input);
+            return false;
+        }
+
+        for (int i = 0; i < 8192; i++) {
+            if (line[i] == '\n') {
+                line[i] = 0;
+                break;
+            }
+        }
+        strncpy(list[rowsNum], line, 8191);
+        list[rowsNum][8191] = '\0';
+        rowsNum++;
+        if (rowsNum >= listSize) {
+            listSize *= 2;
+            char** temp = realloc(list, listSize * sizeof(char*));
+            if (temp == NULL) {
+                for (size_t i = 0; i < rowsNum; i++) {
+                    free(list[i]);
+                }
+                free(list);
+                fclose(input);
+                fclose(output);
+                return false;
+            }
+            list = temp;
+        }
+    }
+
     fclose(input);
-    int columnsNum = 0;
-    int rowsNum = 0;
-    countColumnsAndRows(inp, &rowsNum, &columnsNum);
 
-    int* width = makeArrayOfWidth(inp, rowsNum, columnsNum);
-    printRows(inp, out, width, rowsNum, columnsNum);
+    if (rowsNum > 0) {
+        for (size_t i = 0; list[0][i] != '\0'; i++) {
+            if (list[0][i] == ',') {
+                columnsNum++;
+            }
+        }
+    }
+    columnsNum++;
+    int* width = makeArrayOfWidth(list, rowsNum, columnsNum);
+    printRows(list, output, width, rowsNum, columnsNum);
 
+    fclose(output);
     free(width);
+
+    for (size_t i = 0; i < rowsNum; i++) {
+        free(list[i]);
+    }
+    free(list);
     return true;
 }
