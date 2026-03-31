@@ -8,19 +8,23 @@
 static void countColumnsAndRows(const char* inp, int* rows, int* columns)
 {
     FILE* file = fopen(inp, "r");
+    int rowsloc = 0;
+    int columnsloc = 0;
     char buf[1024];
     while (fgets(buf, 1024, file)) {
-        (*rows)++;
-        if ((*rows) == 1) {
+        rowsloc++;
+        if (rowsloc == 1) {
             for (int i = 0; buf[i] != '\0'; i++) {
                 if (buf[i] == ',') {
-                    (*columns)++;
+                    columnsloc++;
                 }
             }
-            (*columns)++;
+            columnsloc++;
         }
     }
 
+    *rows = rowsloc;
+    *columns = columnsloc;
     fclose(file);
 }
 
