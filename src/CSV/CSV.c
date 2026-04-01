@@ -5,11 +5,11 @@
 
 #include "CSV.h"
 
-static int* makeArrayOfWidth(char** list, size_t rows, size_t columns)
+static size_t* makeArrayOfWidth(char** list, size_t rows, size_t columns)
 {
-    int* width = NULL;
+    size_t* width = NULL;
     if (columns) {
-        width = (int*)calloc(columns, sizeof(int));
+        width = (size_t*)calloc(columns, sizeof(size_t));
     }
     char* curr = NULL;
     for (size_t i = 0; i < rows; i++) {
@@ -22,7 +22,7 @@ static int* makeArrayOfWidth(char** list, size_t rows, size_t columns)
         for (size_t j = 0; j < columns; j++) {
             if (token == NULL)
                 break;
-            width[j] = ((int)strlen(token) > width[j]) ? (int)strlen(token) : width[j];
+            width[j] = (strlen(token) > width[j]) ? strlen(token) : width[j];
             token = strtok(NULL, ",");
         }
         free(curr);
@@ -30,7 +30,7 @@ static int* makeArrayOfWidth(char** list, size_t rows, size_t columns)
 
     return width;
 }
-static void printRow(FILE* out, char* buffer, const int* widths, size_t columns, bool heading)
+static void printRow(FILE* out, char* buffer, const size_t* widths, size_t columns, bool heading)
 {
     fprintf(out, "| ");
     char* endp = NULL;
@@ -42,11 +42,11 @@ static void printRow(FILE* out, char* buffer, const int* widths, size_t columns,
         double res = strtod(token, &endp);
         if ((*endp != 0 && res == 0.0) || heading) {
             fprintf(out, "%s", token);
-            for (size_t q = 0; q < (size_t)(widths[j] - strlen(token)); q++) {
+            for (size_t q = 0; q < widths[j] - strlen(token); q++) {
                 fprintf(out, " ");
             }
         } else {
-            for (size_t q = 0; q < (size_t)(widths[j] - strlen(token)); q++) {
+            for (size_t q = 0; q < widths[j] - strlen(token); q++) {
                 fprintf(out, " ");
             }
             fprintf(out, "%s", token);
@@ -60,7 +60,7 @@ static void printRow(FILE* out, char* buffer, const int* widths, size_t columns,
     fprintf(out, "\n");
     for (size_t k = 0; k < columns; k++) {
         fprintf(out, "+");
-        for (size_t q = 0; q < (size_t)(widths[k] + 2); q++) {
+        for (size_t q = 0; q < widths[k] + 2; q++) {
             if (heading) {
                 fprintf(out, "=");
             } else {
@@ -70,7 +70,7 @@ static void printRow(FILE* out, char* buffer, const int* widths, size_t columns,
     }
     fprintf(out, "+\n");
 }
-static void printRows(char** list, FILE* output, int* widths, size_t rows, size_t columns)
+static void printRows(char** list, FILE* output, const size_t* widths, size_t rows, size_t columns)
 {
     for (size_t k = 0; k < columns; k++) {
         fprintf(output, "+");
@@ -158,7 +158,7 @@ bool prettyPrinter(const char* inp, const char* out)
         }
     }
     columnsNum++;
-    int* width = makeArrayOfWidth(list, rowsNum, columnsNum);
+    size_t* width = makeArrayOfWidth(list, rowsNum, columnsNum);
     printRows(list, output, width, rowsNum, columnsNum);
 
     fclose(output);
