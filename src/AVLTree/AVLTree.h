@@ -30,15 +30,14 @@ typedef struct Node Node;
 typedef struct AVL AVL;
 typedef struct Iterator Iterator;
 
-void avlInsert(AVL* tree, const char sh[], const char fl[]);
-AVL* newAVL(void);
-const char* avlFind(AVL* tree, const char sh[]);
-// static void freeNode(Node* node);
-void avlFree(AVL* tree);
+void avlInsert(AVL* tree, const char sh[], const char fl[]); // inserts new node into tree
+AVL* newAVL(void); // creates new empty tree
+const char* avlFind(AVL* tree, const char sh[]); // returns full name or NULL if short name is not represented
+void avlFree(AVL* tree); // frees all tree memory
 
-void avlDelete(AVL* tree, const char sh[]);
+void avlDelete(AVL* tree, const char sh[]); // removes node by short name
 
-Iterator* iteratorInit(AVL* tree);
+Iterator* iteratorInit(AVL* tree); // creates in-order iterator
 bool iteratorHasNext(Iterator* it);
-Node* iteratorNext(Iterator* it); // return -1 if there are no more values
+Node* iteratorNext(Iterator* it); // returns NULL if no more elements
 void iteratorFree(Iterator* it);

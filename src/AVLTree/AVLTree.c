@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define USE_ROTATIONS true // initilization with rotations is 15 times faster than without!!!
@@ -151,7 +152,8 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
         return;
     }
 
-    PathEntry path[16384];
+    const int maxHeight = (int)(1.44 * log(tree->size + 2) - 0.328);
+    PathEntry path[maxHeight];
     int pathTop = 0;
     Node* curr = tree->root;
 
