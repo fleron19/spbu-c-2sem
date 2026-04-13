@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(spbu-c C)
+project(spbu-c-2sem C)
+
 
 if(NOT WIN32)
   string(ASCII 27 Esc)
