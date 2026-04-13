@@ -236,27 +236,19 @@ const char* avlFind(AVL* tree, const char sh[])
 
 static void freeNode(Node* node)
 {
-    while (node != NULL) {
-        if (node->leftChild != NULL) {
-            Node* child = node->leftChild;
-            node->leftChild = child->rightChild;
-            free(child);
-        } else if (node->rightChild != NULL) {
-            Node* child = node->rightChild;
-            node->rightChild = child->leftChild;
-            free(child);
-        } else {
-            free(node);
-            return;
-        }
-    }
+    if (node == NULL) return;
+    freeNode(node->leftChild);
+    freeNode(node->rightChild);
+    free(node);
 }
 
 void avlFree(AVL* tree)
 {
+    if (tree == NULL) return;
     freeNode(tree->root);
     free(tree);
 }
+
 
 static Node* findMin(Node* root)
 {
