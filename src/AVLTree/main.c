@@ -44,11 +44,8 @@ void delete(AVL* tree, char* arg)
 
 void add(AVL* tree, char* arg)
 {
-    // printf("%s\n", arg);
     char* token1 = strtok(arg, ":");
     char* token2 = strtok(NULL, "\n");
-    // printf("%s\n", token1);
-    // printf("%s\n", token2);
     avlInsert(tree, token1, token2);
     printf("Аэропорт '%s' добавлен в базу.\n", arg);
 }
@@ -76,7 +73,6 @@ int main(int argc, char** argv)
     while (fgets(buf, 1024, inptxt)) {
         char* token1 = strtok(buf, ":");
         char* token2 = strtok(NULL, ":\n");
-        // printf("%s %s \n", token1, token2);
         avlInsert(avl, token1, token2);
         rowsCount++;
     }
