@@ -40,5 +40,5 @@ void avlDelete(AVL* tree, const char sh[]);
 
 Iterator* iteratorInit(AVL* tree);
 bool iteratorHasNext(Iterator* it);
-Node* iteratorNext(Iterator* it); // return -1 if there are no more values
+Node* iteratorNext(Iterator* it); // return NULL if there are no more values
 void iteratorFree(Iterator* it);
