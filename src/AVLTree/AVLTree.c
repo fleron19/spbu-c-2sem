@@ -2,11 +2,11 @@
 #include "stack.h"
 #include "tests.h"
 #include <limits.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define USE_ROTATIONS true // initilization with rotations is 15 times faster than without!!!
@@ -119,26 +119,13 @@ static Node* rebalance(Node* n)
     return n;
 }
 
-AVL* newAVL(void)
-{
-    AVL* avl = (AVL*)malloc(sizeof(*avl));
-    if (avl == NULL) {
-        printf("Allocation error\n");
-        return NULL;
-    }
-    avl->root = NULL;
-    avl->size = 0;
-    return avl;
-}
-
-void avlInsert(AVL* tree, const char sh[], const char fl[])
+static Node* createNode(const char sh[], const char fl[])
 {
     Node* newNode = (Node*)malloc(sizeof(*newNode));
     if (newNode == NULL) {
         printf("Allocation error\n");
-        return;
+        return NULL;
     }
-    tree->size++;
     strncpy(newNode->shortName, sh, 3);
     newNode->shortName[3] = '\0';
     strncpy(newNode->fullName, fl, 255);
@@ -146,48 +133,11 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
     newNode->leftChild = NULL;
     newNode->rightChild = NULL;
     newNode->balanceFactor = 0;
+    return newNode;
+}
 
-    if (tree->root == NULL) {
-        tree->root = newNode;
-        return;
-    }
-
-    const int maxHeight = (int)(1.44 * log(tree->size + 2) - 0.328);
-    PathEntry path[maxHeight];
-    int pathTop = 0;
-    Node* curr = tree->root;
-
-    while (true) {
-        int cmp = strcmp(sh, curr->shortName);
-        if (cmp == 0) {
-            strncpy(curr->fullName, fl, 255);
-            curr->fullName[255] = '\0';
-            free(newNode);
-            tree->size--;
-            return;
-        }
-
-        if (cmp > 0) {
-            path[pathTop].node = curr;
-            path[pathTop].dir = 1;
-            pathTop++;
-            if (curr->rightChild == NULL) {
-                curr->rightChild = newNode;
-                break;
-            }
-            curr = curr->rightChild;
-        } else {
-            path[pathTop].node = curr;
-            path[pathTop].dir = -1;
-            pathTop++;
-            if (curr->leftChild == NULL) {
-                curr->leftChild = newNode;
-                break;
-            }
-            curr = curr->leftChild;
-        }
-    }
-
+static void updateAncestorsAndRebalance(AVL* tree, PathEntry path[], int pathTop)
+{
     for (int i = pathTop - 1; i >= 0; i--) {
         Node* parent = path[i].node;
         if (path[i].dir == -1) {
@@ -217,6 +167,77 @@ void avlInsert(AVL* tree, const char sh[], const char fl[])
     }
 }
 
+static bool findAndInsert(AVL* tree, const char sh[], const char fl[], Node* newNode, PathEntry path[], int* pathTop)
+{
+    Node* curr = tree->root;
+    while (true) {
+        int cmp = strcmp(sh, curr->shortName);
+        if (cmp == 0) {
+            strncpy(curr->fullName, fl, 255);
+            curr->fullName[255] = '\0';
+            free(newNode);
+            tree->size--;
+            return false;
+        }
+
+        if (cmp > 0) {
+            path[*pathTop].node = curr;
+            path[*pathTop].dir = 1;
+            (*pathTop)++;
+            if (curr->rightChild == NULL) {
+                curr->rightChild = newNode;
+                return true;
+            }
+            curr = curr->rightChild;
+        } else {
+            path[*pathTop].node = curr;
+            path[*pathTop].dir = -1;
+            (*pathTop)++;
+            if (curr->leftChild == NULL) {
+                curr->leftChild = newNode;
+                return true;
+            }
+            curr = curr->leftChild;
+        }
+    }
+}
+
+void avlInsert(AVL* tree, const char sh[], const char fl[])
+{
+    Node* newNode = createNode(sh, fl);
+    if (newNode == NULL) {
+        return;
+    }
+    tree->size++;
+
+    if (tree->root == NULL) {
+        tree->root = newNode;
+        return;
+    }
+
+    const int maxHeight = (int)(1.44 * log(tree->size + 2) - 0.328);
+    PathEntry path[maxHeight];
+    int pathTop = 0;
+
+    if (!findAndInsert(tree, sh, fl, newNode, path, &pathTop)) {
+        return;
+    }
+
+    updateAncestorsAndRebalance(tree, path, pathTop);
+}
+
+AVL* newAVL(void)
+{
+    AVL* avl = (AVL*)malloc(sizeof(*avl));
+    if (avl == NULL) {
+        printf("Allocation error\n");
+        return NULL;
+    }
+    avl->root = NULL;
+    avl->size = 0;
+    return avl;
+}
+
 const char* avlFind(AVL* tree, const char sh[])
 {
     if (tree->size == 0 || tree->root == NULL) {
@@ -238,7 +259,8 @@ const char* avlFind(AVL* tree, const char sh[])
 
 static void freeNode(Node* node)
 {
-    if (node == NULL) return;
+    if (node == NULL)
+        return;
     freeNode(node->leftChild);
     freeNode(node->rightChild);
     free(node);
@@ -246,16 +268,78 @@ static void freeNode(Node* node)
 
 void avlFree(AVL* tree)
 {
-    if (tree == NULL) return;
+    if (tree == NULL)
+        return;
     freeNode(tree->root);
     free(tree);
 }
-
 
 static Node* findMin(Node* root)
 {
     while (root && root->leftChild)
         root = root->leftChild;
+    return root;
+}
+
+
+static Node* deleteLeaf(Node* root, bool* outShrunk, bool* outDeleted)
+{
+    free(root);
+    *outShrunk = true;
+    *outDeleted = true;
+    return NULL;
+}
+
+static Node* removeRecursive(Node* root, const char sh[], bool* outShrunk, bool* outDeleted);
+
+static Node* deleteNodeWithTwoChildren(Node* root, bool* outShrunk, bool* outDeleted)
+{
+    Node* succ = findMin(root->rightChild);
+
+    strncpy(root->shortName, succ->shortName, 3);
+    root->shortName[3] = '\0';
+    strncpy(root->fullName, succ->fullName, 255);
+    root->fullName[255] = '\0';
+
+    bool childShrunk = false, childDeleted = false;
+    root->rightChild = removeRecursive(root->rightChild, succ->shortName, &childShrunk, &childDeleted);
+    if (childDeleted && outDeleted)
+        *outDeleted = true;
+    if (!childShrunk) {
+        *outShrunk = false;
+        return root;
+    }
+    root->balanceFactor += 1;
+    return root;
+}
+
+static Node* deleteNodeWithOneChild(Node* root, bool* outShrunk, bool* outDeleted)
+{
+    Node* child = root->leftChild ? root->leftChild : root->rightChild;
+    Node* tmp = root;
+    root = child;
+    free(tmp);
+    *outShrunk = true;
+    *outDeleted = true;
+    return root;
+}
+
+static Node* handlePostDeletionBalance(Node* root, bool* outShrunk)
+{
+    if (root->balanceFactor == 1 || root->balanceFactor == -1) {
+        *outShrunk = false;
+        return root;
+    }
+    if (root->balanceFactor == 0) {
+        *outShrunk = true;
+        return root;
+    }
+    if (root->balanceFactor == 2 || root->balanceFactor == -2) {
+        root = rebalance(root);
+        *outShrunk = (root->balanceFactor == 0);
+        return root;
+    }
+    *outShrunk = false;
     return root;
 }
 
@@ -296,68 +380,16 @@ static Node* removeRecursive(Node* root, const char sh[], bool* outShrunk, bool*
         }
         root->balanceFactor += 1;
     } else {
-        // найден узел для удаления
         if (!root->leftChild && !root->rightChild) {
-            free(root);
-            if (outShrunk)
-                *outShrunk = true;
-            if (outDeleted)
-                *outDeleted = true;
-            return NULL;
+            return deleteLeaf(root, outShrunk, outDeleted);
         } else if (root->leftChild && root->rightChild) {
-            Node* succ = findMin(root->rightChild);
-
-            strncpy(root->shortName, succ->shortName, 3);
-            root->shortName[3] = '\0';
-            strncpy(root->fullName, succ->fullName, 255);
-            root->fullName[255] = '\0';
-
-            bool childShrunk = false, childDeleted = false;
-            root->rightChild = removeRecursive(root->rightChild, succ->shortName, &childShrunk, &childDeleted);
-            if (childDeleted && outDeleted)
-                *outDeleted = true;
-            if (!childShrunk) {
-                if (outShrunk)
-                    *outShrunk = false;
-                return root;
-            }
-            root->balanceFactor += 1;
+            return deleteNodeWithTwoChildren(root, outShrunk, outDeleted);
         } else {
-            Node* child = root->leftChild ? root->leftChild : root->rightChild;
-            Node* tmp = root;
-            root = child;
-            free(tmp);
-            if (outShrunk)
-                *outShrunk = true;
-            if (outDeleted)
-                *outDeleted = true;
-            return root;
+            return deleteNodeWithOneChild(root, outShrunk, outDeleted);
         }
     }
 
-    if (root->balanceFactor == 1 || root->balanceFactor == -1) {
-        if (outShrunk)
-            *outShrunk = false;
-        return root;
-    } else if (root->balanceFactor == 0) {
-        if (outShrunk)
-            *outShrunk = true;
-        return root;
-    } else if (root->balanceFactor == 2 || root->balanceFactor == -2) {
-        root = rebalance(root);
-        if (root->balanceFactor == 0) {
-            if (outShrunk)
-                *outShrunk = true;
-        } else {
-            if (outShrunk)
-                *outShrunk = false;
-        }
-        return root;
-    }
-
-    if (outShrunk)
-        *outShrunk = false;
-    return root;
+    return handlePostDeletionBalance(root, outShrunk);
 }
 
 void avlDelete(AVL* tree, const char sh[])
