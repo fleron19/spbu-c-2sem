@@ -39,5 +39,5 @@ void avlDelete(AVL* tree, const char sh[]); // removes node by short name
 
 Iterator* iteratorInit(AVL* tree); // creates in-order iterator
 bool iteratorHasNext(Iterator* it);
-Node* iteratorNext(Iterator* it); // returns NULL if no more elements
+Node* iteratorNext(Iterator* it); // return NULL if there are no more values
 void iteratorFree(Iterator* it);
