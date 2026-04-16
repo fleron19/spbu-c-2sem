@@ -36,7 +36,7 @@ void find(AVL* tree, char* arg)
     }
 }
 
-void delete(AVL* tree, char* arg)
+void del(AVL* tree, char* arg)
 {
     avlDelete(tree, arg);
     printf("Аэропорт '%s' удалён из базы.\n", arg);
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 
             if (strcmp(com, "delete") == 0) {
                 char* arg = strtok(NULL, " \n");
-                delete(avl, arg);
+                del(avl, arg);
             }
 
             if (strcmp(com, "add") == 0) {
