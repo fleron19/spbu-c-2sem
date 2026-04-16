@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 
             if (strcmp(com, "delete") == 0) {
                 char* arg = strtok(NULL, " \n");
-                delete (avl, arg);
+                delete(avl, arg);
             }
 
             if (strcmp(com, "add") == 0) {

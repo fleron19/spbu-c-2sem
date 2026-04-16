@@ -281,7 +281,6 @@ static Node* findMin(Node* root)
     return root;
 }
 
-
 static Node* deleteLeaf(Node* root, bool* outShrunk, bool* outDeleted)
 {
     free(root);
