@@ -214,7 +214,7 @@ void avlInsert(AVL* tree, const char key[], const char val[])
         return;
     }
 
-    const int MAX_HEIGHT = (int)(1.44 * log(tree->size + 2) - 0.328);
+    const int MAX_HEIGHT = (int)(1.44 * log2(tree->size + 2) - 0.328) + 5;
     PathEntry path[MAX_HEIGHT];
     int pathTop = 0;
 
@@ -399,4 +399,3 @@ void avlDelete(AVL* tree, const char key[])
     if (deleted && tree->size > 0)
         tree->size--;
 }
-
