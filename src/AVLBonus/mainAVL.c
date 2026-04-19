@@ -72,6 +72,7 @@ void second(AVL* tree, FILE* file, char* keys[], int keysCnt)
 }
 int main(int argc, char** argv)
 {
+    (void)argc;
     const int AIRPORTS_NUM = 9063;
     if (strcmp(argv[1], "--test") == 0) {
         return test();
