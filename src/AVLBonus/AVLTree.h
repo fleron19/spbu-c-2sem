@@ -14,7 +14,6 @@ struct AVL {
     int size;
 };
 
-
 struct PathEntry {
     struct Node* node;
     int dir;
@@ -30,4 +29,3 @@ const char* avlFind(AVL* tree, const char key[]); // returns value or NULL if ke
 void avlDelete(AVL* tree, const char key[]); // removes node by key name
 
 void avlFree(AVL* tree); // frees all tree memory
-

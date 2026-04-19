@@ -50,8 +50,7 @@ void second(AVL* tree, FILE* file, char* keys[], int keysCnt)
         if (op % 2) {
             int r = rand() % keysCnt;
             avlFind(tree, keys[r]);
-        }
-        else {
+        } else {
             fgets(buf, 512, file);
             char* token1 = strtok(buf, ":");
             char* token2 = strtok(NULL, ":");
@@ -67,9 +66,8 @@ void second(AVL* tree, FILE* file, char* keys[], int keysCnt)
             keyBuf[254] = '\0';
             strncpy(valBuf, token2, 254);
             valBuf[254] = '\0';
-            avlInsert(tree, keyBuf, valBuf);  
+            avlInsert(tree, keyBuf, valBuf);
         }
-
     }
 }
 int main(int argc, char** argv)

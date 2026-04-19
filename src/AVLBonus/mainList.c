@@ -1,5 +1,5 @@
-#include "ListTests.h"
 #include "LinkedList.h"
+#include "ListTests.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,8 +50,7 @@ void second(LinkedList* tree, FILE* file, char* keys[], int keysCnt)
         if (op % 2) {
             int r = rand() % keysCnt;
             listFind(tree, keys[r]);
-        }
-        else {
+        } else {
             fgets(buf, 512, file);
             char* token1 = strtok(buf, ":");
             char* token2 = strtok(NULL, ":");
@@ -67,9 +66,8 @@ void second(LinkedList* tree, FILE* file, char* keys[], int keysCnt)
             keyBuf[254] = '\0';
             strncpy(valBuf, token2, 254);
             valBuf[254] = '\0';
-            listInsert(tree, keyBuf, valBuf);  
+            listInsert(tree, keyBuf, valBuf);
         }
-
     }
 }
 int main(int argc, char** argv)
